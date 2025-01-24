@@ -38,4 +38,29 @@ describe('EVM Bytecode Basics', () => {
     const bytecode = '60016002FF' // PUSH1 01, PUSH1 02, Invalid opcode FF
     expect(() => interpretBytecode(bytecode)).toThrow('Invalid opcode: FF')
   })
+  it('handles SUB operation correctly', () => {
+    const bytecode = '6005600403' // PUSH1 05, PUSH1 04, SUB
+    const result = interpretBytecode(bytecode)
+    expect(result).toBe(1) // 5 - 4 = 1
+   })
+
+  it('processes multiple PUSH operations', () => {
+    const bytecode = '60016002600360040101' // PUSH1 01, PUSH1 02, PUSH1 03, PUSH1 04, ADD, ADD
+    const result = interpretBytecode(bytecode)
+    expect(result).toBe(10) // 1 + 2 + 3 + 4 = 10
+  })
+
+  it('handles byte values greater than 0x0F', () => {
+    const bytecode = '60FF600102' // PUSH1 FF, PUSH1 01, MUL
+    const result = interpretBytecode(bytecode)
+    expect(result).toBe(255) // 255 * 1 = 255
+  })
+
+  it('parses mixed length PUSH operations', () => {
+    const bytecode = '6001610100' // PUSH1 01, PUSH2 0100
+    const instructions = parseBytecode(bytecode)
+    expect(instructions).toHaveLength(2)
+    expect(instructions[0]).toEqual({ opcode: 'PUSH1', operand: '01' })
+    expect(instructions[1]).toEqual({ opcode: 'PUSH2', operand: '0100' })
+  })
 })

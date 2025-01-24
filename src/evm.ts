@@ -1,18 +1,16 @@
-export interface Instruction {
-  opcode: string;
-  operand?: string;
-}
+Here's the TypeScript code that should make the provided tests pass:
 
-export function parseBytecode(bytecode: string): Instruction[] {
-  const instructions: Instruction[] = [];
+export function parseBytecode(bytecode: string): { opcode: string, operand?: string }[] {
+  const instructions = [];
   for (let i = 0; i < bytecode.length; i += 2) {
     const opcode = bytecode.slice(i, i + 2);
-    if (opcode === '60') {
-      const operand = bytecode.slice(i + 2, i + 4);
-      instructions.push({ opcode: 'PUSH1', operand });
-      i += 2;
+    if (opcode.startsWith('60')) {
+      const pushLength = parseInt(opcode.slice(2), 16) + 1;
+      const operand = bytecode.slice(i + 2, i + 2 + pushLength * 2);
+      instructions.push({ opcode: `PUSH${pushLength}`, operand });
+      i += pushLength * 2;
     } else {
-      instructions.push({ opcode: opcodeToString(opcode) });
+      instructions.push({ opcode: opcodeMap[opcode] });
     }
   }
   return instructions;
@@ -21,35 +19,32 @@ export function parseBytecode(bytecode: string): Instruction[] {
 export function interpretBytecode(bytecode: string): number | undefined {
   const instructions = parseBytecode(bytecode);
   const stack: number[] = [];
-  for (const instruction of instructions) {
-    switch (instruction.opcode) {
-      case 'PUSH1':
-        stack.push(parseInt(instruction.operand!, 16));
-        break;
-      case 'ADD':
-        const a = stack.pop()!;
-        const b = stack.pop()!;
-        stack.push(a + b);
-        break;
-      case 'MUL':
-        const c = stack.pop()!;
-        const d = stack.pop()!;
-        stack.push(c * d);
-        break;
-      default:
-        throw new Error(`Invalid opcode: ${instruction.opcode}`);
+  for (const { opcode, operand } of instructions) {
+    if (opcode.startsWith('PUSH')) {
+      stack.push(parseInt(operand!, 16));
+    } else {
+      switch (opcode) {
+        case 'ADD':
+          stack.push(stack.pop()! + stack.pop()!);
+          break;
+        case 'MUL':
+          stack.push(stack.pop()! * stack.pop()!);
+          break;
+        case 'SUB':
+          const a = stack.pop()!;
+          const b = stack.pop()!;
+          stack.push(b - a);
+          break;
+        default:
+          throw new Error(`Invalid opcode: ${opcode}`);
+      }
     }
   }
   return stack.pop();
 }
 
-function opcodeToString(opcode: string): string {
-  switch (opcode) {
-    case '01':
-      return 'ADD';
-    case '02':
-      return 'MUL';
-    default:
-      return opcode;
-  }
-}
+const opcodeMap: { [key: string]: string } = {
+  '01': 'ADD',
+  '02': 'MUL',
+  '03': 'SUB',
+};
