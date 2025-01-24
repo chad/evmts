@@ -4,7 +4,7 @@ import { describe, it, expect } from '@jest/globals'
 import { parseBytecode, interpretBytecode } from '../src/evm' 
 
 describe('EVM Bytecode Basics', () => {
-  it('parses simple PUSH/ADD sequence', () => {
+  it('parses simple PUSH/ADD sequence correctly', () => {
     // 0x6001600201 => PUSH1 0x01, PUSH1 0x02, ADD
     const bytecode = '6001600201'
     const instructions = parseBytecode(bytecode)
@@ -26,5 +26,16 @@ describe('EVM Bytecode Basics', () => {
     expect(instructions).toHaveLength(0)
     const result = interpretBytecode(bytecode)
     expect(result).toBeUndefined() 
+  })
+
+  it('interprets multiple operations in sequence', () => {
+   const bytecode = '6003600202600401' // PUSH1 03, PUSH1 02, MUL, PUSH1 04, ADD
+   const result = interpretBytecode(bytecode)
+   expect(result).toBe(10) // (3 * 2) + 4 = 10
+  })
+
+  it('handles invalid opcodes gracefully', () => {
+    const bytecode = '60016002FF' // PUSH1 01, PUSH1 02, Invalid opcode FF
+    expect(() => interpretBytecode(bytecode)).toThrow('Invalid opcode: FF')
   })
 })

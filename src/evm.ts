@@ -1,5 +1,4 @@
-```typescript
-interface Instruction {
+export interface Instruction {
   opcode: string;
   operand?: string;
 }
@@ -12,25 +11,45 @@ export function parseBytecode(bytecode: string): Instruction[] {
       const operand = bytecode.slice(i + 2, i + 4);
       instructions.push({ opcode: 'PUSH1', operand });
       i += 2;
-    } else if (opcode === '01') {
-      instructions.push({ opcode: 'ADD' });
+    } else {
+      instructions.push({ opcode: opcodeToString(opcode) });
     }
   }
   return instructions;
 }
 
 export function interpretBytecode(bytecode: string): number | undefined {
-  const stack: number[] = [];
   const instructions = parseBytecode(bytecode);
+  const stack: number[] = [];
   for (const instruction of instructions) {
-    if (instruction.opcode === 'PUSH1') {
-      stack.push(parseInt(instruction.operand!, 16));
-    } else if (instruction.opcode === 'ADD') {
-      const a = stack.pop()!;
-      const b = stack.pop()!;
-      stack.push(a + b);
+    switch (instruction.opcode) {
+      case 'PUSH1':
+        stack.push(parseInt(instruction.operand!, 16));
+        break;
+      case 'ADD':
+        const a = stack.pop()!;
+        const b = stack.pop()!;
+        stack.push(a + b);
+        break;
+      case 'MUL':
+        const c = stack.pop()!;
+        const d = stack.pop()!;
+        stack.push(c * d);
+        break;
+      default:
+        throw new Error(`Invalid opcode: ${instruction.opcode}`);
     }
   }
   return stack.pop();
 }
-```
+
+function opcodeToString(opcode: string): string {
+  switch (opcode) {
+    case '01':
+      return 'ADD';
+    case '02':
+      return 'MUL';
+    default:
+      return opcode;
+  }
+}
